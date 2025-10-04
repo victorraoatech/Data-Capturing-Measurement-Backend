@@ -11,6 +11,68 @@ logger = logging.getLogger(__name__)
 @jwt_required()
 @admin_required
 def get_all_users():
+    """
+    Get all users (Admin only)
+    ---
+    tags:
+      - Admin
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: List of all users retrieved successfully
+        schema:
+          type: object
+          properties:
+            users:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: 507f1f77bcf86cd799439011
+                  email:
+                    type: string
+                    example: user@example.com
+                  role:
+                    type: string
+                    example: user
+                  is_active:
+                    type: boolean
+                    example: true
+                  is_blocked:
+                    type: boolean
+                    example: false
+                  created_at:
+                    type: string
+                    format: date-time
+                    example: "2025-10-04T12:00:00"
+      401:
+        description: Unauthorized (missing or invalid token)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authorization token is missing
+      403:
+        description: Forbidden (user is not an admin)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Admin access required
+      500:
+        description: Internal server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Failed to fetch users
+    """
     try:
         users = User.get_all_users()
 
@@ -35,6 +97,70 @@ def get_all_users():
 @jwt_required()
 @admin_required
 def block_user(user_id):
+    """
+    Block a user (Admin only)
+    ---
+    tags:
+      - Admin
+    security:
+      - Bearer: []
+    parameters:
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: User ID to block
+        example: 507f1f77bcf86cd799439011
+    responses:
+      200:
+        description: User blocked successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: User blocked successfully
+      400:
+        description: Bad request (user already blocked)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: User is already blocked
+      401:
+        description: Unauthorized (missing or invalid token)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authorization token is missing
+      403:
+        description: Forbidden (user is not an admin)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Admin access required
+      404:
+        description: User not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: User not found
+      500:
+        description: Internal server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Failed to block user
+    """
     try:
         user = User.find_by_id(user_id)
         if not user:
@@ -56,6 +182,70 @@ def block_user(user_id):
 @jwt_required()
 @admin_required
 def unblock_user(user_id):
+    """
+    Unblock a user (Admin only)
+    ---
+    tags:
+      - Admin
+    security:
+      - Bearer: []
+    parameters:
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: User ID to unblock
+        example: 507f1f77bcf86cd799439011
+    responses:
+      200:
+        description: User unblocked successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: User unblocked successfully
+      400:
+        description: Bad request (user is not blocked)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: User is not blocked
+      401:
+        description: Unauthorized (missing or invalid token)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authorization token is missing
+      403:
+        description: Forbidden (user is not an admin)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Admin access required
+      404:
+        description: User not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: User not found
+      500:
+        description: Internal server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Failed to unblock user
+    """
     try:
         user = User.find_by_id(user_id)
         if not user:
@@ -98,6 +288,70 @@ def reactivate_user(user_id):
 @jwt_required()
 @admin_required
 def delete_user(user_id):
+    """
+    Delete a user (Admin only)
+    ---
+    tags:
+      - Admin
+    security:
+      - Bearer: []
+    parameters:
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: User ID to delete
+        example: 507f1f77bcf86cd799439011
+    responses:
+      200:
+        description: User deleted successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: User deleted successfully
+      400:
+        description: Bad request (cannot delete own account)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Cannot delete your own account
+      401:
+        description: Unauthorized (missing or invalid token)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authorization token is missing
+      403:
+        description: Forbidden (user is not an admin)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Admin access required
+      404:
+        description: User not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: User not found
+      500:
+        description: Internal server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Failed to delete user
+    """
     try:
         admin_id = get_jwt_identity()
         if admin_id == user_id:

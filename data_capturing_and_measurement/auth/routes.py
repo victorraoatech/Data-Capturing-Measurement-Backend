@@ -21,6 +21,68 @@ def generate_otp(length=6):
 
 @auth_bp.route('/signup', methods=['POST'])
 def signup():
+    """
+    Register a new user
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              format: email
+              example: user@example.com
+              description: User's email address
+            password:
+              type: string
+              format: password
+              example: SecurePass123!
+              description: User's password (min 8 characters, must include uppercase, lowercase, number, and special character)
+    responses:
+      201:
+        description: User registered successfully, OTP sent to email
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: User registered successfully. Please check your email for OTP verification.
+            email:
+              type: string
+              example: user@example.com
+      400:
+        description: Bad request (invalid email or password format)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Invalid email format
+      409:
+        description: Email already registered
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Email already registered
+      500:
+        description: Internal server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Registration failed
+    """
     try:
         data = request.get_json()
 
@@ -65,6 +127,64 @@ def signup():
 
 @auth_bp.route('/verify-otp', methods=['POST'])
 def verify_otp():
+    """
+    Verify user account with OTP
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - otp
+          properties:
+            email:
+              type: string
+              format: email
+              example: user@example.com
+              description: User's email address
+            otp:
+              type: string
+              example: "123456"
+              description: 6-digit OTP code sent to email
+    responses:
+      200:
+        description: Account verified successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Account verified successfully
+      400:
+        description: Bad request (invalid or expired OTP)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Invalid or expired OTP
+      404:
+        description: User not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: User not found
+      500:
+        description: Internal server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Verification failed
+    """
     try:
         data = request.get_json()
 
@@ -127,6 +247,88 @@ def resend_otp():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
+    """
+    Login with email and password
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              format: email
+              example: user@example.com
+              description: User's email address
+            password:
+              type: string
+              format: password
+              example: SecurePass123!
+              description: User's password
+    responses:
+      200:
+        description: Login successful
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Login successful
+            access_token:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            refresh_token:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            user:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: user@example.com
+                role:
+                  type: string
+                  example: user
+      400:
+        description: Bad request (missing fields)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Email and password are required
+      401:
+        description: Invalid credentials
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Invalid credentials
+      403:
+        description: Account not verified or blocked
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Please verify your account first
+      500:
+        description: Internal server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Login failed
+    """
     try:
         data = request.get_json()
 
@@ -176,6 +378,62 @@ def login():
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
+    """
+    Refresh access token using refresh token
+    ---
+    tags:
+      - Authentication
+    security:
+      - Bearer: []
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+        type: string
+        description: Refresh token (use refresh token instead of access token)
+        example: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    responses:
+      200:
+        description: New access token generated
+        schema:
+          type: object
+          properties:
+            access_token:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      401:
+        description: Unauthorized (missing or invalid refresh token)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authorization token is missing
+      403:
+        description: Account blocked or inactive
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Account is blocked
+      404:
+        description: User not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: User not found
+      500:
+        description: Internal server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Token refresh failed
+    """
     try:
         user_id = get_jwt_identity()
         user = User.find_by_id(user_id)
@@ -199,6 +457,39 @@ def refresh():
 @auth_bp.route('/logout', methods=['POST'])
 @jwt_required()
 def logout():
+    """
+    Logout user and revoke token
+    ---
+    tags:
+      - Authentication
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Logout successful
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Logout successful
+      401:
+        description: Unauthorized (missing or invalid token)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authorization token is missing
+      500:
+        description: Internal server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Logout failed
+    """
     try:
         jti = get_jwt()['jti']
         exp = get_jwt()['exp']
@@ -287,6 +578,60 @@ def reset_password():
 @jwt_required()
 @active_user_required
 def profile():
+    """
+    Get authenticated user profile
+    ---
+    tags:
+      - Authentication
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: User profile retrieved successfully
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+              example: user@example.com
+            role:
+              type: string
+              example: user
+            is_active:
+              type: boolean
+              example: true
+            is_blocked:
+              type: boolean
+              example: false
+            created_at:
+              type: string
+              format: date-time
+              example: "2025-10-04T12:00:00"
+      401:
+        description: Unauthorized (missing or invalid token)
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authorization token is missing
+      404:
+        description: User not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: User not found
+      500:
+        description: Internal server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Failed to fetch profile
+    """
     try:
         user_id = get_jwt_identity()
         user = User.find_by_id(user_id)

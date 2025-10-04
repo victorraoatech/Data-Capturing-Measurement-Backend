@@ -2,8 +2,10 @@ from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from flask_cors import CORS
+from flasgger import Swagger
 from config import Config
 from models import TokenBlacklist
+from swagger_config import swagger_config, swagger_template
 import logging
 
 logging.basicConfig(
@@ -25,6 +27,8 @@ def create_app():
 
     jwt = JWTManager(app)
     mail = Mail(app)
+
+    Swagger(app, config=swagger_config, template=swagger_template)
 
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
@@ -68,6 +72,33 @@ def create_app():
 
     @app.route('/')
     def index():
+        """
+        API Welcome Endpoint
+        ---
+        tags:
+          - Health
+        responses:
+          200:
+            description: Welcome message with API information
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Welcome to Data Capturing and Measurement API
+                version:
+                  type: string
+                  example: 1.0.0
+                endpoints:
+                  type: object
+                  properties:
+                    auth:
+                      type: string
+                      example: /auth
+                    admin:
+                      type: string
+                      example: /admin
+        """
         return jsonify({
             'message': 'Welcome to Data Capturing and Measurement API',
             'version': '1.0.0',
@@ -79,6 +110,21 @@ def create_app():
 
     @app.route('/health')
     def health():
+        """
+        Health Check Endpoint
+        ---
+        tags:
+          - Health
+        responses:
+          200:
+            description: API health status
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  example: healthy
+        """
         return jsonify({'status': 'healthy'}), 200
 
     @app.errorhandler(404)
