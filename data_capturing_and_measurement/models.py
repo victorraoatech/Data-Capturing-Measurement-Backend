@@ -4,12 +4,13 @@ from config import Config
 import bcrypt
 
 client = MongoClient(Config.MONGODB_URI)
-db = client.get_database()
+db = client["data_capturing_and_measurement"]  # ✅ Explicit database
 
 users_collection = db.users
 blacklist_collection = db.token_blacklist
 otp_collection = db.otp_codes
 
+# Indexes
 users_collection.create_index([("email", ASCENDING)], unique=True)
 blacklist_collection.create_index([("token", ASCENDING)], unique=True)
 blacklist_collection.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0)
